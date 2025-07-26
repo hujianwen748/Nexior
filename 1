@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameVault - 游戏发布与分享平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#7C3AED', // 主紫色
+                        secondary: '#EC4899', // 辅助粉色
+                        dark: '#0F172A', // 深色背景
+                        'dark-light': '#1E293B', // 稍浅的深色
+                        'gray-custom': '#94A3B8', // 自定义灰色
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-8px);
+            }
+            .gradient-overlay {
+                background: linear-gradient(to top, rgba(15,23,42,1) 0%, rgba(15,23,42,0) 100%);
+            }
+            .tag-selected {
+                background-color: rgba(124, 58, 237, 0.2);
+                border-color: #7C3AED;
+                color: #7C3AED;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-dark text-white min-h-screen flex flex-col">
+    <!-- 导航栏 -->
+    <header id="navbar" class="fixed w-full z-50 transition-all duration-300 bg-dark/80 backdrop-blur-md">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-1">
+                <i class="fa fa-gamepad text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">GameVault</h1>
+            </div>
+            
+            <!-- 桌面导航 -->
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="#" class="font-medium hover:text-primary transition-colors">首页</a>
+                <a href="#games" class="font-medium hover:text-primary transition-colors">游戏库</a>
+                <a href="#categories" class="font-medium hover:text-primary transition-colors">分类</a>
+                <a href="#trending" class="font-medium hover:text-primary transition-colors">热门</a>
+            </nav>
+            
+            <div class="flex items-center space-x-4">
+                <div class="relative hidden md:block">
+                    <input type="text" placeholder="搜索游戏..." class="bg-dark-light rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-48 lg:w-64 transition-all">
+                    <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-custom"></i>
+                </div>
+                
+                <button id="publishBtn" class="hidden md:block bg-primary hover:bg-primary/90 text-white font-medium py-2 px-5 rounded-full transition-all transform hover:scale-105">
+                    发布游戏
+                </button>
+                
+                <div class="relative">
+                    <button id="userMenuBtn" class="flex items-center justify-center w-10 h-10 rounded-full bg-dark-light overflow-hidden">
+                        <img src="https://picsum.photos/id/237/100/100" alt="用户头像" class="w-full h-full object-cover">
+                    </button>
+                    
+                    <!-- 用户菜单 -->
+                    <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-dark-light rounded-lg shadow-lg py-2 hidden z-50">
+                        <a href="#" class="block px-4 py-2 text-sm hover:bg-primary/20 transition-colors">
+                            <i class="fa fa-user mr-2"></i>个人中心
+                        </a>
+                        <a href="#" class="block px-4 py-2 text-sm hover:bg-primary/20 transition-colors">
+                            <i class="fa fa-heart mr-2"></i>我的收藏
+                        </a>
+                        <a href="#" class="block px-4 py-2 text-sm hover:bg-primary/20 transition-colors">
+                            <i class="fa fa-cog mr-2"></i>设置
+                        </a>
+                        <div class="border-t border-gray-700 my-1"></div>
+                        <a href="#" class="block px-4 py-2 text-sm text-red-400 hover:bg-red-400/10 transition-colors">
+                            <i class="fa fa-sign-out mr-2"></i>退出登录
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- 移动端菜单按钮 -->
+                <button id="mobileMenuBtn" class="md:hidden text-2xl">
+                    <i class="fa fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 移动端导航菜单 -->
+        <div id="mobileMenu" class="md:hidden bg-dark-light hidden">
+            <div class="container mx-auto px-4 py-3">
+                <div class="relative mb-4">
+                    <input type="text" placeholder="搜索游戏..." class="bg-dark rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-full">
+                    <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-custom"></i>
+                </div>
+                <nav class="flex flex-col space-y-3 pb-3">
+                    <a href="#" class="font-medium hover:text-primary transition-colors py-2">首页</a>
+                    <a href="#games" class="font-medium hover:text-primary transition-colors py-2">游戏库</a>
+                    <a href="#categories" class="font-medium hover:text-primary transition-colors py-2">分类</a>
+                    <a href="#trending" class="font-medium hover:text-primary transition-colors py-2">热门</a>
+                    <button class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-5 rounded-full transition-all">
+                        发布游戏
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow pt-16">
+        <!-- 英雄区域 -->
+        <section class="relative h-[70vh] min-h-[500px] overflow-hidden">
+            <div class="absolute inset-0 z-0">
+                <img src="https://picsum.photos/id/169/1920/1080" alt="游戏主题背景" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-dark via-dark/70 to-transparent"></div>
+            </div>
+            
+            <div class="container mx-auto px-4 h-full flex flex-col justify-end pb-16 relative z-10">
+                <div class="max-w-2xl">
+                    <span class="inline-block bg-primary/90 text-white text-sm font-semibold px-3 py-1 rounded-full mb-4">本周精选</span>
+                    <h2 class="text-[clamp(2rem,5vw,3.5rem)] font-bold leading-tight text-shadow mb-4">星际探险：未知边界</h2>
+                    <p class="text-gray-200 text-lg mb-6 max-w-xl">探索广阔的宇宙，发现未知的星球，与外星文明接触，展开一场惊心动魄的星际冒险。</p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="#game-details" class="bg-primary hover:bg-primary/90 text-white font-medium py-3 px-8 rounded-full transition-all transform hover:scale-105 flex items-center">
+                            <i class="fa fa-play-circle mr-2"></i> 查看详情
+                        </a>
+                        <a href="#" class="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-medium py-3 px-8 rounded-full transition-all border border-white/30">
+                            <i class="fa fa-download mr-2"></i> 立即下载
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 游戏分类 -->
+        <section id="categories" class="py-16 bg-gradient-to-b from-dark to-dark-light">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-between items-center mb-10">
+                    <h2 class="text-3xl font-bold">游戏分类</h2>
+                    <a href="#" class="text-primary hover:text-primary/80 font-medium flex items-center transition-colors">
+                        查看全部 <i class="fa fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                    <a href="#" class="category-card bg-dark-light rounded-xl p-6 text-center hover:bg-primary/20 hover:border-primary/50 border border-transparent transition-all">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                            <i class="fa fa-mobile text-primary text-3xl"></i>
+                        </div>
+                        <h3 class="font-medium text-lg">手机游戏</h3>
+                        <p class="text-sm text-gray-custom mt-1">326 款游戏</p>
+                    </a>
+                    
+                    <a href="#" class="category-card bg-dark-light rounded-xl p-6 text-center hover:bg-primary/20 hover:border-primary/50 border border-transparent transition-all">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                            <i class="fa fa-desktop text-primary text-3xl"></i>
+                        </div>
+                        <h3 class="font-medium text-lg">电脑游戏</h3>
+                        <p class="text-sm text-gray-custom mt-1">248 款游戏</p>
+                    </a>
+                    
+                    <a href="#" class="category-card bg-dark-light rounded-xl p-6 text-center hover:bg-primary/20 hover:border-primary/50 border border-transparent transition-all">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                            <i class="fa fa-file-zip-o text-primary text-3xl"></i>
+                        </div>
+                        <h3 class="font-medium text-lg">解压教程</h3>
+                        <p class="text-sm text-gray-custom mt-1">86 篇教程</p>
+                    </a>
+                    
+                    <a href="#" class="category-card bg-dark-light rounded-xl p-6 text-center hover:bg-primary/20 hover:border-primary/50 border border-transparent transition-all">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                            <i class="fa fa-gamepad text-primary text-3xl"></i>
+                        </div>
+                        <h3 class="font-medium text-lg">模拟器</h3>
+                        <p class="text-sm text-gray-custom mt-1">42 款工具</p>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 最新游戏 -->
+        <section id="games" class="py-16 bg-dark-light">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-between items-center mb-10">
+                    <h2 class="text-3xl font-bold">最新发布</h2>
+                    <div class="flex space-x-2">
+                        <button class="filter-btn active px-4 py-2 rounded-full bg-primary text-white text-sm font-medium">全部</button>
+                        <button class="filter-btn px-4 py-2 rounded-full bg-dark hover:bg-dark/80 text-white text-sm font-medium transition-colors">热门</button>
+                        <button class="filter-btn px-4 py-2 rounded-full bg-dark hover:bg-dark/80 text-white text-sm font-medium transition-colors">新品</button>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- 游戏卡片 1 -->
+                    <div class="game-card bg-dark rounded-xl overflow-hidden card-hover">
+                        <div class="relative">
+                            <img src="https://picsum.photos/id/237/600/400" alt="森林冒险" class="w-full h-48 object-cover">
+                            <div class="absolute top-3 left-3 bg-primary/90 text-white text-xs font-bold px-2 py-1 rounded">新发布</div>
+                            <button class="absolute top-3 right-3 w-8 h-8 rounded-full bg-dark/50 backdrop-blur-sm flex items-center justify-center hover:bg-primary transition-colors">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                        </div>
+                        <div class="p-5">
+                            <div class="flex justify-between items-start mb-3">
+                                <h3 class="font-bold text-lg">森林冒险</h3>
+                                <div class="flex items-center text-yellow-400 text-sm">
+                                    <i class="fa fa-star"></i>
+                                    <span class="ml-1 text-white">4.8</span>
+                                </div>
+                            </div>
+                            <p class="text-gray-custom text-sm mb-4 line-clamp-2">探索神秘森林，解开古老谜题，寻找隐藏的宝藏。</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs bg-dark-light px-2 py-1 rounded-full">手机游戏</span>
+                                <a href="#game-details" class="text-primary hover:text-primary/80 text-sm font-medium transition-colors">查看详情</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 游戏卡片 2 -->
+                    <div class="game-card bg-dark rounded-xl overflow-hidden card-hover">
+                        <div class="relative">
+                            <img src="https://picsum.photos/id/110/600/400" alt="城市赛车" class="w-full h-48 object-cover">
+                            <div class="absolute top-3 left-3 bg-secondary/90 text-white text-xs font-bold px-2 py-1 rounded">热门</div>
+                            <button class="absolute top-3 right-3 w-8 h-8 rounded-full bg-dark/50 backdrop-blur-sm flex items-center justify-center hover:bg-primary transition-colors">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                        </div>
+                        <div class="p-5">
+                            <div class="flex justify-between items-start mb-3">
+                                <h3 class="font-bold text-lg">城市赛车</h3>
+                                <div class="flex items-center text-yellow-400 text-sm">
+                                    <i class="fa fa-star"></i>
+                                    <span class="ml-1 text-white">4.5</span>
+                                </div>
+                            </div>
+                            <p class="text-gray-custom text-sm mb-4 line-clamp-2">在城市街道上与对手展开极速竞赛，成为最快的车手。</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs bg-dark-light px-2 py-1 rounded-full">电脑游戏</span>
+                                <a href="#game-details" class="text-primary hover:text-primary/80 text-sm font-medium transition-colors">查看详情</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 游戏卡片 3 -->
+                    <div class="game-card bg-dark rounded-xl overflow-hidden card-hover">
+                        <div class="relative">
+                            <img src="https://picsum.photos/id/160/600/400" alt="星际战争" class="w-full h-48 object-cover">
+                            <button class="absolute top-3 right-3 w-8 h-8 rounded-full bg-dark/50 backdrop-blur-sm flex items-center justify-center hover:bg-primary transition-colors">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                        </div>
+                        <div class="p-5">
+                            <div class="flex justify-between items-start mb-3">
+                                <h3 class="font-bold text-lg">星际战争</h3>
+                                <div class="flex items-center text-yellow-400 text-sm">
+                                    <i class="fa fa-star"></i>
+                                    <span class="ml-1 text-white">4.7</span>
+                                </div>
+                            </div>
+                            <p class="text-gray-custom text-sm mb-4 line-clamp-2">指挥你的太空舰队，与外星种族进行战略战斗，保卫银河系。</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs bg-dark-light px-2 py-1 rounded-full">模拟器</span>
+                                <a href="#game-details" class="text-primary hover:text-primary/80 text-sm font-medium transition-colors">查看详情</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 游戏卡片 4 -->
+                    <div class="game-card bg-dark rounded-xl overflow-hidden card-hover">
+                        <div class="relative">
+                            <img src="https://picsum.photos/id/201/600/400" alt="魔法学院" class="w-full h-48 object-cover">
+                            <button class="absolute top-3 right-3 w-8 h-8 rounded-full bg-dark/50 backdrop-blur-sm flex items-center justify-center hover:bg-primary transition-colors">
+                                <i class="fa fa-heart-o"></i>
+                            </button>
+                        </div>
+                        <div class="p-5">
+                            <div class="flex justify-between items-start mb-3">
+                                <h3 class="font-bold text-lg">魔法学院</h3>
+                                <div class="flex items-center text-yellow-400 text-sm">
+                                    <i class="fa fa-star"></i>
+                                    <span class="ml-1 text-white">4.9</span>
+                                </div>
+                            </div>
+                            <p class="text-gray-custom text-sm mb-4 line-clamp-2">成为一名巫师学徒，学习强大的魔法，探索学院的秘密。</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs bg-dark-light px-2 py-1 rounded-full">手机游戏</span>
+                                <a href="#game-details" class="text-primary hover:text-primary/80 text-sm font-medium transition-colors">查看详情</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-10 text-center">
+                    <button class="bg-dark hover:bg-dark-light text-white font-medium py-3 px-8 rounded-full transition-all border border-gray-700">
+                        加载更多 <i class="fa fa-refresh ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 热门排行 -->
+        <section id="trending" class="py-16 bg-dark">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-between items-center mb-10">
+                    <h2 class="text-3xl font-bold">热门排行</h2>
+                    <div class="flex space-x-2">
+                        <button class="trend-btn active px-4 py-2 rounded-full bg-primary text-white text-sm font-medium">本周</button>
+                        <button class="trend-btn px-4 py-2 rounded-full bg-dark-light hover:bg-dark-light/80 text-white text-sm font-medium transition-colors">本月</button>
+                        <button class="trend-btn px-4 py-2 rounded-full bg-dark-light hover:bg-dark-light/80 text-white text-sm font-medium transition-colors">全年</button>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- 排行榜 -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-dark-light rounded-xl overflow-hidden">
+                            <div class="p-6 border-b border-gray-700">
+                                <h3 class="font-bold text-xl">下载量排行</h3>
+                            </div>
+                            
+                            <div class="divide-y divide-gray-700">
+                                <!-- 排行项 1 -->
+                                <div class="p-4 md:p-6 flex items-center hover:bg-dark/50 transition-colors">
+                                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center font-bold mr-4">1</div>
+                                    <img src="https://picsum.photos/id/110/100/100" alt="城市赛车" class="w-16 h-16 object-cover rounded-lg flex-shrink-0 mr-4">
+                                    <div class="flex-grow">
+                                        <h4 class="font-medium">城市赛车</h4>
+                                        <p class="text-gray-custom text-sm">电脑游戏 • 1.2M 下载</p>
+                                    </div>
+                                    <div class="flex items-center text-yellow-400">
+                                        <i class="fa fa-star"></i>
+                                        <span class="ml-1 text-white">4.5</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- 排行项 2 -->
+                                <div class="p-4 md:p-6 flex items-center hover:bg-dark/50 transition-colors">
+                                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/80 flex items-center justify-center font-bold mr-4">2</div>
+                                    <img src="https://picsum.photos/id/192/100/100" alt="复古游戏模拟器" class="w-16 h-16 object-cover rounded-lg flex-shrink-0 mr-4">
+                                    <div class="flex-grow">
+                                        <h4 class="font-medium">复古游戏模拟器</h4>
+                                        <p class="text-gray-custom text-sm">模拟器 • 980K 下载</p>
+                                    </div>
+                                    <div class="flex items-center text-yellow-400">
+                                        <i class="fa fa-star"></i>
+                                        <span class="ml-1 text-white">4.7</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- 排行项 3 -->
+                                <div class="p-4 md:p-6 flex items-center hover:bg-dark/50 transition-colors">
+                                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/60 flex items-center justify-center font-bold mr-4">3</div>
+                                    <img src="https://picsum.photos/id/201/100/100" alt="魔法学院" class="w-16 h-16 object-cover rounded-lg flex-shrink-0 mr-4">
+                                    <div class="flex-grow">
+                                        <h4 class="font-medium">魔法学院</h4>
+                                        <p class="text-gray-custom text-sm">手机游戏 • 850K 下载</p>
+                                    </div>
+                                    <div class="flex items-center text-yellow-400">
+                                        <i class="fa fa-star"></i>
+                                        <span class="ml-1 text-white">4.9</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 统计图表 -->
+                    <div class="bg-dark-light rounded-xl overflow-hidden">
+                        <div class="p-6 border-b border-gray-700">
+                            <h3 class="font-bold text-xl">游戏类别分布</h3>
+                        </div>
+                        <div class="p-6">
+                            <canvas id="categoryChart" width="400" height="300"></canvas>
+                        </div>
+                        <div class="p-6 border-t border-gray-700">
+                            <h3 class="font-bold text-lg mb-4">平台数据</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-dark rounded-lg p-4">
+                                    <p class="text-gray-custom text-sm">总资源数</p>
+                                    <p class="text-2xl font-bold mt-1">696</p>
+                                </div>
+                                <div class="bg-dark rounded-lg p-4">
+                                    <p class="text-gray-custom text-sm">总下载量</p>
+                                    <p class="text-2xl font-bold mt-1">86.3M</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 游戏开发者区域 -->
+        <section class="py-16 bg-gradient-to-b from-dark to-dark-light">
+            <div class="container mx-auto px-4">
+                <div class="bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl overflow-hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2">
+                        <div class="p-8 md:p-12 flex flex-col justify-center">
+                            <h2 class="text-3xl md:text-4xl font-bold mb-4">发布你的游戏作品</h2>
+                            <p class="text-gray-200 mb-8">加入我们的开发者社区，将你的游戏作品分享给数百万玩家。我们提供完善的发布工具和数据分析，帮助你获得更多关注。</p>
+                            <div class="flex flex-wrap gap-4">
+                                <button id="developerPublishBtn" class="bg-primary hover:bg-primary/90 text-white font-medium py-3 px-8 rounded-full transition-all transform hover:scale-105">
+                                    立即发布
+                                </button>
+                                <a href="#" class="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-medium py-3 px-8 rounded-full transition-all border border-white/30">
+                                    了解更多
+                                </a>
+                            </div>
+                        </div>
+                        <div class="hidden lg:block relative">
+                            <img src="https://picsum.photos/id/180/800/600" alt="游戏开发" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-l from-dark-light to-transparent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 游戏详情模态框 -->
+        <div id="game-details" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+            <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="modalOverlay"></div>
+            <div class="relative bg-dark-light rounded-xl w-full max-w-5xl max-h-[90vh] overflow-y-auto m-4 transform transition-all">
+                <button id="closeModal" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-dark/50 backdrop-blur-sm flex items-center justify-center hover:bg-primary z-10 transition-colors">
+                    <i class="fa fa-times"></i>
+                </button>
+                
+                <div class="relative h-64 md:h-80">
+                    <img src="https://picsum.photos/id/110/1200/600" alt="城市赛车" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 gradient-overlay"></div>
+                    <div class="absolute bottom-4 left-4 right-4">
+                        <span class="inline-block bg-secondary/90 text-white text-xs font-bold px-2 py-1 rounded-full mb-2">热门</span>
+                        <h2 class="text-2xl md:text-3xl font-bold text-shadow">城市赛车</h2>
+                        <div class="flex items-center mt-2">
+                            <span class="text-xs bg-dark-light px-2 py-1 rounded-full mr-3">电脑游戏</span>
+                            <div class="flex items-center text-yellow-400">
+                                <i class="fa fa-star"></i>
+                                <span class="ml-1 text-white">4.5</span>
+                                <span class="ml-2 text-gray-custom text-sm">(12,456 评价)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <div class="flex flex-wrap gap-4 mb-6">
+                        <button class="bg-primary hover:bg-primary/90 text-white font-medium py-3 px-8 rounded-full transition-all flex items-center">
+                            <i class="fa fa-download mr-2"></i> 立即下载
+                        </button>
+                        <button class="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-medium py-3 px-6 rounded-full transition-all border border-white/30 flex items-center">
+                            <i class="fa fa-heart-o mr-2"></i> 收藏
+                        </button>
+                        <button class="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-medium py-3 px-6 rounded-full transition-all border border-white/30 flex items-center">
+                            <i class="fa fa-share-alt mr-2"></i> 分享
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="md:col-span-2">
+                            <h3 class="text-xl font-bold mb-4">游戏介绍</h3>
+                            <p class="text-gray-200 mb-6">在城市赛车中，你将体验到前所未有的速度与激情。选择你喜欢的赛车，在繁华的城市街道上与来自世界各地的对手展开激烈角逐。游戏拥有真实的物理引擎和精美的画面，让你仿佛置身于真实的赛车世界。</p>
+                            
+                            <h3 class="text-xl font-bold mb-4">游戏特色</h3>
+                            <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                                <li class="flex items-start">
+                                    <i class="fa fa-check text-primary mt-1 mr-2"></i>
+                                    <span>20 多种不同型号的赛车</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fa fa-check text-primary mt-1 mr-2"></i>
+                                    <span>15 条精心设计的城市赛道</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <div class="bg-dark rounded-xl p-5 mb-6">
+                                <h3 class="text-lg font-bold mb-4">游戏信息</h3>
+                                <div class="space-y-3">
+                                    <div>
+                                        <p class="text-gray-custom text-sm">开发者</p>
+                                        <p>Speed Masters Studio</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-custom text-sm">发布日期</p>
+                                        <p>2023-05-15</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 发布游戏模态框 - 更新后的版本 -->
+        <div id="publishModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+            <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="publishOverlay"></div>
+            <div class="relative bg-dark-light rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4 transform transition-all">
+                <button id="closePublishModal" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-dark/50 backdrop-blur-sm flex items-center justify-center hover:bg-primary z-10 transition-colors">
+                    <i class="fa fa-times"></i>
+                </button>
+                
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold mb-6">发布新资源</h2>
+                    
+                    <form id="publishForm" class="space-y-8">
+                        <div>
+                            <label for="gameTitle" class="block text-sm font-medium mb-2">资源标题</label>
+                            <input type="text" id="gameTitle" class="w-full bg-dark border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" placeholder="输入资源名称">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">资源分类（可多选）</label>
+                            <div class="flex flex-wrap gap-3">
+                                <label class="inline-flex items-center px-4 py-2 border border-gray-700 rounded-full cursor-pointer hover:border-primary transition-colors">
+                                    <input type="checkbox" name="category" value="mobile" class="mr-2">
+                                    <span>手机游戏</span>
+                                </label>
+                                <label class="inline-flex items-center px-4 py-2 border border-gray-700 rounded-full cursor-pointer hover:border-primary transition-colors">
+                                    <input type="checkbox" name="category" value="pc" class="mr-2">
+                                    <span>电脑游戏</span>
+                                </label>
+                                <label class="inline-flex items-center px-4 py-2 border border-gray-700 rounded-full cursor-pointer hover:border-primary transition-colors">
+                                    <input type="checkbox" name="category" value="tutorial" class="mr-2">
+                                    <span>解压教程</span>
+                                </label>
+                                <label class="inline-flex items-center px-4 py-2 border border-gray-700 rounded-full cursor-pointer hover:border-primary transition-colors">
+                                    <input type="checkbox" name="category" value="emulator" class="mr-2">
+                                    <span>模拟器</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-4">资源描述与媒体</label>
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div class="lg:col-span-2">
+                                    <textarea id="gameDescription" rows="10" class="w-full bg-dark border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none" placeholder="详细描述你的资源内容、特色、使用方法等信息..."></textarea>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium mb-2">资源封面</label>
+                                        <div class="border-2 border-dashed border-gray-700 rounded-lg p-4 text-center hover:border-primary transition-colors cursor-pointer">
+                                            <i class="fa fa-cloud-upload text-2xl text-gray-custom mb-2"></i>
+                                            <p class="text-sm">上传封面图片</p>
+                                            <input type="file" class="hidden" accept="image/*" id="coverImage">
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium mb-2">资源截图</label>
+                                        <div class="border-2 border-dashed border-gray-700 rounded-lg p-4 text-center hover:border-primary transition-colors cursor-pointer">
+                                            <i class="fa fa-picture-o text-2xl text-gray-custom mb-2"></i>
+                                            <p class="text-sm">点击上传截图</p>
+                                            <p class="text-xs text-gray-custom mt-1">支持多张上传，无数量限制</p>
+                                            <input type="file" class="hidden" accept="image/*" multiple id="screenshotImages">
+                                        </div>
+                                        
+                                        <!-- 已上传截图预览区 -->
+                                        <div id="screenshotsPreview" class="mt-3 flex flex-wrap gap-2 hidden">
+                                            <!-- 示例截图预览 -->
+                                            <div class="relative w-20 h-20 rounded-md overflow-hidden">
+                                                <img src="https://picsum.photos/id/111/200/200" alt="截图预览" class="w-full h-full object-cover">
+                                                <button class="absolute top-1 right-1 w-5 h-5 bg-dark/70 rounded-full flex items-center justify-center text-xs hover:bg-red-500 transition-colors">
+                                                    <i class="fa fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="block text-sm font-medium">下载链接</label>
+                                <button type="button" id="addDownloadLink" class="text-primary text-sm hover:underline">
+                                    <i class="fa fa-plus-circle mr-1"></i> 添加链接
+                                </button>
+                            </div>
+                            
+                            <div id="downloadLinksContainer" class="space-y-3">
+                                <div class="flex items-center gap-3">
+                                    <input type="url" placeholder="输入下载链接" class="flex-grow bg-dark border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
+                                    <input type="text" placeholder="链接说明（如：官方下载）" class="w-36 bg-dark border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
+                                    <button type="button" class="text-gray-custom hover:text-red-400 transition-colors remove-link">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="flex items-center gap-3">
+                                    <input type="url" placeholder="输入下载链接" class="flex-grow bg-dark border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
+                                    <input type="text" placeholder="链接说明（如：镜像1）" class="w-36 bg-dark border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
+                                    <button type="button" class="text-gray-custom hover:text-red-400 transition-colors remove-link">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="pt-4">
+                            <button type="submit" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-8 rounded-lg transition-all">
+                                提交发布
+                            </button>
+                            <p class="text-xs text-gray-custom text-center mt-3">提交后将进行审核，审核通过后将在平台上线</p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-dark py-12 border-t border-gray-800">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center space-x-1 mb-4">
+                        <i class="fa fa-gamepad text-primary text-2xl"></i>
+                        <h2 class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">GameVault</h2>
+                    </div>
+                    <p class="text-gray-custom mb-4">发现和分享精彩游戏资源的平台，连接游戏爱好者的桥梁。</p>
+                </div>
+                
+                <div>
+                    <h3 class="font-bold mb-4">快速链接</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-custom hover:text-primary transition-colors">首页</a></li>
+                        <li><a href="#games" class="text-gray-custom hover:text-primary transition-colors">资源库</a></li>
+                        <li><a href="#categories" class="text-gray-custom hover:text-primary transition-colors">分类</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="font-bold mb-4">支持</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-custom hover:text-primary transition-colors">帮助中心</a></li>
+                        <li><a href="#" class="text-gray-custom hover:text-primary transition-colors">联系我们</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="font-bold mb-4">订阅更新</h3>
+                    <p class="text-gray-custom mb-4">获取最新游戏资源发布和平台动态</p>
+                    <div class="flex">
+                        <input type="email" placeholder="你的邮箱地址" class="bg-dark-light rounded-l-lg px-4 py-2 focus:outline-none focus:ring-1 focus:ring-primary flex-grow">
+                        <button class="bg-primary hover:bg-primary/90 text-white px-4 rounded-r-lg transition-colors">
+                            <i class="fa fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 pt-8 text-center text-gray-custom text-sm">
+                <p>© 2023 GameVault. 保留所有权利。</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 导航栏滚动效果
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('py-2', 'shadow-lg');
+                navbar.classList.remove('py-3');
+            } else {
+                navbar.classList.add('py-3');
+                navbar.classList.remove('py-2', 'shadow-lg');
+            }
+        });
+        
+        // 移动端菜单
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        mobileMenuBtn.addEventListener('click', function() {
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        // 用户菜单
+        const userMenuBtn = document.getElementById('userMenuBtn');
+        const userMenu = document.getElementById('userMenu');
+        
+        userMenuBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userMenu.classList.toggle('hidden');
+        });
+        
+        document.addEventListener('click', function() {
+            userMenu.classList.add('hidden');
+        });
+        
+        // 筛选按钮
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                filterBtns.forEach(b => {
+                    b.classList.remove('active', 'bg-primary');
+                    b.classList.add('bg-dark', 'hover:bg-dark/80');
+                });
+                this.classList.add('active', 'bg-primary');
+                this.classList.remove('bg-dark', 'hover:bg-dark/80');
+            });
+        });
+        
+        // 排行按钮
+        const trendBtns = document.querySelectorAll('.trend-btn');
+        trendBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                trendBtns.forEach(b => {
+                    b.classList.remove('active', 'bg-primary');
+                    b.classList.add('bg-dark-light', 'hover:bg-dark-light/80');
+                });
+                this.classList.add('active', 'bg-primary');
+                this.classList.remove('bg-dark-light', 'hover:bg-dark-light/80');
+            });
+        });
+        
+        // 游戏详情模态框
+        const gameDetailsLinks = document.querySelectorAll('a[href="#game-details"]');
+        const gameDetailsModal = document.getElementById('game-details');
+        const closeModal = document.getElementById('closeModal');
+        const modalOverlay = document.getElementById('modalOverlay');
+        
+        gameDetailsLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                gameDetailsModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            });
+        });
+        
+        function closeDetailsModal() {
+            gameDetailsModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+        
+        closeModal.addEventListener('click', closeDetailsModal);
+        modalOverlay.addEventListener('click', closeDetailsModal);
+        
+        // 发布游戏模态框
+        const publishBtn = document.getElementById('publishBtn');
+        const developerPublishBtn = document.getElementById('developerPublishBtn');
+        const publishModal = document.getElementById('publishModal');
+        const closePublishModal = document.getElementById('closePublishModal');
+        const publishOverlay = document.getElementById('publishOverlay');
+        const publishForm = document.getElementById('publishForm');
+        
+        function openPublishModal() {
+            publishModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        publishBtn.addEventListener('click', openPublishModal);
+        developerPublishBtn.addEventListener('click', openPublishModal);
+        
+        function closePublishModalFunc() {
+            publishModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+        
+        closePublishModal.addEventListener('click', closePublishModalFunc);
+        publishOverlay.addEventListener('click', closePublishModalFunc);
+        
+        publishForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('资源发布申请已提交，等待审核！');
+            closePublishModalFunc();
+        });
+        
+        // 分类多选功能
+        const categoryCheckboxes = document.querySelectorAll('input[name="category"]');
+        categoryCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const label = this.closest('label');
+                if (this.checked) {
+                    label.classList.add('tag-selected');
+                } else {
+                    label.classList.remove('tag-selected');
+                }
+            });
+        });
+        
+        // 截图上传预览功能
+        const screenshotUpload = document.getElementById('screenshotImages');
+        const screenshotsPreview = document.getElementById('screenshotsPreview');
+        
+        screenshotUpload.addEventListener('change', function() {
+            // 显示预览区
+            screenshotsPreview.classList.remove('hidden');
+            
+            // 实际项目中这里会处理上传的图片并显示预览
+            // 这里仅做演示
+        });
+        
+        // 移除截图功能
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-screenshot')) {
+                const screenshot = e.target.closest('.relative');
+                screenshot.remove();
+                
+                // 如果没有截图了，隐藏预览区
+                if (screenshotsPreview.children.length === 0) {
+                    screenshotsPreview.classList.add('hidden');
+                }
+            }
+        });
+        
+        // 添加下载链接功能
+        const addDownloadLinkBtn = document.getElementById('addDownloadLink');
+        const downloadLinksContainer = document.getElementById('downloadLinksContainer');
+        
+        addDownloadLinkBtn.addEventListener('click', function() {
+            const newLinkDiv = document.createElement('div');
+            newLinkDiv.className = 'flex items-center gap-3';
+            newLinkDiv.innerHTML = `
+                <input type="url" placeholder="输入下载链接" class="flex-grow bg-dark border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
+                <input type="text" placeholder="链接说明" class="w-36 bg-dark border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
+                <button type="button" class="text-gray-custom hover:text-red-400 transition-colors remove-link">
+                    <i class="fa fa-trash"></i>
+                </button>
+            `;
+            downloadLinksContainer.appendChild(newLinkDiv);
+        });
+        
+        // 移除下载链接功能
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-link') && downloadLinksContainer.children.length > 1) {
+                const linkDiv = e.target.closest('.flex');
+                linkDiv.remove();
+            }
+        });
+        
+        // 图表初始化
+        window.addEventListener('load', function() {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['手机游戏', '电脑游戏', '解压教程', '模拟器'],
+                    datasets: [{
+                        data: [45, 30, 15, 10],
+                        backgroundColor: [
+                            '#7C3AED',
+                            '#EC4899',
+                            '#3B82F6',
+                            '#10B981'
+                        ],
+                        borderWidth: 0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#94A3B8',
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+        });
+        
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                if (this.getAttribute('href') === '#') return;
+                
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                if (targetId === '#game-details' || targetId === '#publishModal') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                    
+                    // 如果是移动端，点击后关闭菜单
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+    
